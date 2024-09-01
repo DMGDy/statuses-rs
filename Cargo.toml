@@ -1,0 +1,10 @@
+[package]
+name = "statuses-rs"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+get_if_addrs = "0.5.3"
+
+[profile.release]
+opt-level = 3
