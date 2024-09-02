@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 get_if_addrs = "0.5.3"
+networkmanager = "0.4.1"
 
 [profile.release]
 opt-level = 3
