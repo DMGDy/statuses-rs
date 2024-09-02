@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::io::{BufReader,BufRead};
+use std::os::unix::net::UnixStream;
 use std::fs::File;
 use std::env;
 use std::process;
@@ -8,6 +9,39 @@ use std::fmt;
 /* TODO: function to print local IPv4 address
  *      - could be its own window or as tooltip (easier)
 */
+
+fn get_active_window() -> Result<(),Box<dyn Error>>{
+
+    let mut buffer = String::new();
+     
+    let socket2 = UnixStream::connect(
+        format!("{}/hypr/{}/.socket2.sock",
+            env::var("XDG_RUNTIME_DIR")?,
+            env::var("HYPRLAND_INSTANCE_SIGNATURE")?
+    ))?;
+                                                                            
+    let mut reader = BufReader::new(&socket2);
+    loop {
+        if reader.read_line(&mut buffer)? > 1 {
+            if buffer.contains("activewindow>>") {
+                let window_info = buffer
+                    .split(">>")
+                    .skip(1)
+                    .collect::<Vec<&str>>()
+                    .join("");
+                match window_info.split_once(",") {
+                    Some((before,after)) => {
+                        println!("(box :class \"window-container\" :space-evenly false (box :class  \"win-title\" (label :limit-width 50 :text \"{}: \")) (box :class \"win-info\" (label :limit-width 75 :text \"{}\")))"
+                            ,before,after.replace("\n",""));
+                    }
+                    None => ()
+                }
+            }
+            buffer.clear();
+        }
+    }
+}
+
 
 struct MemInfo {
     total: f64,
@@ -78,11 +112,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
            
-            let mut mem = MemInfo::new().unwrap();
             println!("{}Gb",MemInfo::new().unwrap());
-            mem.set_total(10.0);
-            println!(" Total {}",mem.get_total());
 
+        }
+
+        "--window-info" => {
+            get_active_window()?;
         }
         _ => {
             println!("Usage: status-rs [options]");
