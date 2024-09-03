@@ -1,16 +1,91 @@
-use std::error::Error;
+use std::error::Error as StdError;
 use std::io::{BufReader,BufRead};
 use std::os::unix::net::UnixStream;
 use std::fs::File;
 use std::env;
 use std::process;
 use std::fmt;
+use networkmanager::devices::{Any,Device,Wired,Wireless};
+use networkmanager::{NetworkManager,Error};
+use dbus::blocking::Connection;
 
 /* TODO: function to print local IPv4 address
  *      - could be its own window or as tooltip (easier)
 */
 
-fn get_active_window() -> Result<(),Box<dyn Error>>{
+const WIFI_DEV: &str = "wlp170s0";
+
+fn print_conn_status() -> Result<(), Error > {
+
+    let dbus_connection = Connection::new_system()?;
+    let nm = NetworkManager::new(&dbus_connection);
+    let wifidev = nm.get_device_by_ip_iface(WIFI_DEV)?;
+
+    let status = match wifidev {
+        Device::WiFi(x) => {
+            match Some(x.active_access_point()?) {
+                Some(ap) => {
+                    match Some(ap.ssid()) {
+                        Some(Ok(ssid)) => "󰱔",
+                        Some(Err(_)) | None => "󰱟",
+                    }
+                }
+                None => "󰱟",
+            }
+        }
+
+        _ => "󰱟",
+
+    };
+    println!("{}",status);
+
+    Ok(())
+} 
+
+fn print_wifi_info() -> Result<(), networkmanager::Error > {
+    let dbus_connection = Connection::new_system()?;
+    let nm = NetworkManager::new(&dbus_connection);
+    let wifidev = nm.get_device_by_ip_iface(WIFI_DEV)?;
+
+    match wifidev {
+        Device::WiFi(x) => {
+            match Some(x.active_access_point()?) {
+                Some(ap) => {
+                    let ssid = match Some(ap.ssid()) {
+                        Some(Ok(ssid)) => ssid,
+                        Some(Err(_)) | None => "Not Connected".to_owned(),
+
+                    };
+                    print!("{} ",ssid);
+                    let ascii_strength =  match Some(ap.strength()) {
+                        Some(Ok(strength)) => match strength {
+                            0..=25 => "▂___",
+                            26..=50 => "▂▄__",
+                            51..=75 => "▂▄▆_",
+                            76..=100 => "▂▄▆█",
+                            _ => "____",
+                        }
+                        Some(Err(_)) | None =>"____",
+                    };
+                    println!("{}",ascii_strength);
+                }
+
+                None => {
+                    print!("Not Connected");
+
+                }
+            }
+        }
+        _ => { 
+                println!("N/A");
+        }
+    }
+
+    Ok(())
+}
+
+
+fn get_active_window() -> Result<(),Box<dyn StdError>>{
 
     let mut buffer = String::new();
      
@@ -49,7 +124,7 @@ struct MemInfo {
 }
 
 impl MemInfo {
-    pub fn new() -> Result<MemInfo, Box<dyn Error>> {
+    pub fn new() -> Result<MemInfo, Box<dyn StdError>> {
 
         let file = File::open("/proc/meminfo")?;
         let reader = BufReader::new(file);
@@ -93,7 +168,7 @@ impl fmt::Display for MemInfo {
 
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<(), Box<dyn StdError>> {
     let args: Vec<String> = env::args().collect();
 
     if args[1].len() < 1 {
@@ -118,6 +193,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         "--window-info" => {
             get_active_window()?;
+        }
+
+        "--wifi-info" => {
+            print_wifi_info();
+        }
+        "--connection-status" => {
+            print_conn_status();
         }
         _ => {
             println!("Usage: status-rs [options]");
