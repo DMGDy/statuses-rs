@@ -4,8 +4,8 @@ version = "1.0.0"
 edition = "2021"
 
 [dependencies]
-get_if_addrs = "0.5.3"
 networkmanager = "0.4.1"
+dbus = "0.9.7"
 
 [profile.release]
 opt-level = 3
