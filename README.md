@@ -1,8 +1,16 @@
 # statuses-rs
 
 ## what does it do
-Right now it only gets the machines RAM
-by reading `/proc/meminfo`. Plan to implement local IPv4 getter.
+Right now it only gets the machines RAM.
+Additionally now gets connection ssid, connection strength as ascii, and connection indicator icon.
+
+```
+--mem
+--mem -i
+--wifi-info
+--connection-status
+```
+can look through source to figure out not too hard
 
 ## why
 
@@ -15,4 +23,4 @@ it is easy. Writing such a small tool can be easily done in a compiled language 
 `cargo build --release`
 
 ## How to use
-left to user as exercise
+left to user as exercise, might have to change some stuff
