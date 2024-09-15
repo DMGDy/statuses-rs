@@ -11,8 +11,9 @@ use networkmanager::devices::{Device,Wireless};
 use networkmanager::{NetworkManager,Error};
 use dbus::blocking::Connection;
 
-/* TODO: function to print local IPv4 address
- *      - could be its own window or as tooltip (easier)
+/* TODO: rewrite C modules in Rust
+ *  * Battery
+ *  * time/date
 */
 
 fn print_ipv4() {
@@ -51,15 +52,15 @@ fn print_conn_status() -> Result<(), Error > {
             match Some(x.active_access_point()?) {
                 Some(ap) => {
                     match Some(ap.ssid()) {
-                        Some(Ok(_)) => "󰱔",
-                        Some(Err(_)) | None => "󰱟",
+                        Some(Ok(_)) => "󰀂",
+                        Some(Err(_)) | None => "󰯡",
                     }
                 }
-                None => "󰱟",
+                None => "󰯡",
             }
        }
 
-        _ => "󰱟",
+        _ => "󰯡",
 
     };
     println!("{}",status);
