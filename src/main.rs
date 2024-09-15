@@ -5,7 +5,9 @@ use std::fs::File;
 use std::env;
 use std::process;
 use std::fmt;
-use networkmanager::devices::{Any,Device,Wired,Wireless};
+use nix::sys::socket::SockaddrLike;
+use nix::sys::socket::AddressFamily;
+use networkmanager::devices::{Device,Wireless};
 use networkmanager::{NetworkManager,Error};
 use dbus::blocking::Connection;
 
@@ -13,26 +15,49 @@ use dbus::blocking::Connection;
  *      - could be its own window or as tooltip (easier)
 */
 
+fn print_ipv4() {
+    let addrs = nix::ifaddrs::getifaddrs().unwrap();
+    for addr in addrs {
+        if addr.interface_name == WIFI_DEV {
+            match addr.address {
+                Some(address) =>  {
+                    match address.family() {
+                        Some(family) => {
+                            if family == AddressFamily::Inet {
+                                println!("{}",address.to_string().strip_suffix(":0").unwrap_or("N/A"));
+                            }
+                        },
+                        None => {
+                            println!("");
+                        }
+                    }
+                }
+                None => println!("N/A"),
+            }
+        }
+    }
+}
+
 const WIFI_DEV: &str = "wlp170s0";
 
 fn print_conn_status() -> Result<(), Error > {
 
     let dbus_connection = Connection::new_system()?;
     let nm = NetworkManager::new(&dbus_connection);
-    let wifidev = nm.get_device_by_ip_iface(WIFI_DEV)?;
+    let wifidev = nm.get_device_by_ip_iface(WIFI_DEV)?; 
 
     let status = match wifidev {
         Device::WiFi(x) => {
             match Some(x.active_access_point()?) {
                 Some(ap) => {
                     match Some(ap.ssid()) {
-                        Some(Ok(ssid)) => "󰱔",
+                        Some(Ok(_)) => "󰱔",
                         Some(Err(_)) | None => "󰱟",
                     }
                 }
                 None => "󰱟",
             }
-        }
+       }
 
         _ => "󰱟",
 
@@ -151,13 +176,6 @@ impl MemInfo {
             used,
         })
     }
-    pub fn get_total(&self) -> f64{
-        return self.total
-    }
-    
-    pub fn set_total(&mut self,num: f64) {
-        self.total = num
-    }
 
 }
 
@@ -188,7 +206,6 @@ fn main() -> Result<(), Box<dyn StdError>> {
             }
            
             println!("{}Gb",MemInfo::new().unwrap());
-
         }
 
         "--window-info" => {
@@ -200,6 +217,9 @@ fn main() -> Result<(), Box<dyn StdError>> {
         }
         "--connection-status" => {
             print_conn_status();
+        }
+        "--ip" => {
+            print_ipv4();
         }
         _ => {
             println!("Usage: status-rs [options]");
