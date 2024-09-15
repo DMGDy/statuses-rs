@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 networkmanager = "0.4.1"
 dbus = "0.9.7"
+nix = { version = "0.29.0", features = ["net", "socket"] }
 
 [profile.release]
 opt-level = 3
