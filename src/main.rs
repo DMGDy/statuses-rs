@@ -29,7 +29,7 @@ fn print_ipv4() {
                             }
                         },
                         None => {
-                            println!("");
+                            println!("N/A");
                         }
                     }
                 }
