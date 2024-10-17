@@ -135,7 +135,7 @@ fn get_active_window() -> Result<(),Box<dyn StdError>>{
                     Some((before,after)) => {
 
                         println!("(box :class \"window-container\"\
-                            :space-evenly true \
+                            :space-evenly false\
                             (button :class \"window-tab\"\
                             :tooltip \"{}\"\
                             (box \
@@ -148,19 +148,6 @@ fn get_active_window() -> Result<(),Box<dyn StdError>>{
                             ))))",
                             after.replace("\n",""),before,before);
 
-                        /*
-                        println!("(box :class \"window-container\" \
-                            :space-evenly false \
-                            (button :class \"win-icon\"\
-                             :style \
-                            \"background-image: \
-                            url('icons/{}.svg');\")\
-                            (box :class  \"win-title\" \
-                             (label :limit-width 50 :text \"{}: \"))\
-                             (box :class \"win-info\" \
-                             (label :limit-width 75 :text \"{}\")))"
-                            ,before,before,after.replace("\n",""));
-                        */
                     }
                     None => ()
                 }
