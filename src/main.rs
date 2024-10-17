@@ -14,7 +14,10 @@ use dbus::blocking::Connection;
 /* TODO: rewrite C modules in Rust
  *  * Battery
  *  * time/date
+ *  
 */
+
+
 
 fn print_ipv4() {
     let addrs = nix::ifaddrs::getifaddrs().unwrap();
@@ -119,7 +122,7 @@ fn get_active_window() -> Result<(),Box<dyn StdError>>{
         format!("{}/hypr/{}/.socket2.sock",
             env::var("XDG_RUNTIME_DIR")?,
             env::var("HYPRLAND_INSTANCE_SIGNATURE")?
-    ))?;
+        ))?;
                                                                             
     let mut reader = BufReader::new(&socket2);
     loop {
@@ -132,8 +135,17 @@ fn get_active_window() -> Result<(),Box<dyn StdError>>{
                     .join("");
                 match window_info.split_once(",") {
                     Some((before,after)) => {
-                        println!("(box :class \"window-container\" :space-evenly false (box :class  \"win-title\" (label :limit-width 50 :text \"{}: \")) (box :class \"win-info\" (label :limit-width 75 :text \"{}\")))"
-                            ,before,after.replace("\n",""));
+
+                        println!("(box :class \"window-container\" \
+                            :space-evenly false \
+                            (image :class \"win-icon\" \
+                            :image-height 18 \
+                            :path \"./icons/{}.svg\")\
+                            (box :class  \"win-title\" \
+                             (label :limit-width 50 :text \"{}: \"))\
+                            (box :class \"win-info\" \
+                             (label :limit-width 75 :text \"{}\")))"
+                            ,before,before,after.replace("\n",""));
                     }
                     None => ()
                 }
