@@ -1,5 +1,5 @@
 use std::error::Error as StdError;
-use std::io::{BufReader,BufRead};
+use std::io::{Write,BufReader,BufRead};
 use std::os::unix::net::UnixStream;
 use std::fs::File;
 use std::env;
@@ -16,6 +16,8 @@ use dbus::blocking::Connection;
  *  * time/date
  *  
 */
+
+
 
 fn print_ipv4() {
     let addrs = nix::ifaddrs::getifaddrs().unwrap();
@@ -69,14 +71,49 @@ fn print_conn_status() -> Result<(), Error > {
     Ok(())
 } 
 
-fn print_wifi_info() -> Result<(), networkmanager::Error > {
-    let dbus_connection = Connection::new_system()?;
+fn print_wifi_strength() {
+    let dbus_connection = Connection::new_system().unwrap();
     let nm = NetworkManager::new(&dbus_connection);
-    let wifidev = nm.get_device_by_ip_iface(WIFI_DEV)?;
+    let wifidev = nm.get_device_by_ip_iface(WIFI_DEV).unwrap();
 
     match wifidev {
         Device::WiFi(x) => {
-            match Some(x.active_access_point()?) {
+            match Some(x.active_access_point().unwrap()) {
+                Some(ap) => {
+                    let ascii_strength =  match Some(ap.strength()) {
+                        Some(Ok(strength)) => match strength {
+                            0..=12 => "󰤯",
+                            13..=25=>"󰤟",
+                            26..=50 => "󰤢",
+                            51..=75 => "󰤥",
+                            76..=100 => "󰤨",
+                            _ => "󰤫",
+                        }
+                        Some(Err(_)) | None =>"󱛏",
+                    };
+                    println!("{}",ascii_strength);
+                }
+
+                None => {
+                    print!("󰤫");
+
+                }
+            }
+        }
+        _ => { 
+                println!("󰤫");
+        }
+    }
+}
+
+fn print_wifi_info() -> Result<(), networkmanager::Error > {
+    let dbus_connection = Connection::new_system().unwrap();
+    let nm = NetworkManager::new(&dbus_connection);
+    let wifidev = nm.get_device_by_ip_iface(WIFI_DEV).unwrap();
+
+    match wifidev {
+        Device::WiFi(x) => {
+            match Some(x.active_access_point().unwrap()) {
                 Some(ap) => {
                     let ssid = match Some(ap.ssid()) {
                         Some(Ok(ssid)) => ssid,
@@ -84,18 +121,7 @@ fn print_wifi_info() -> Result<(), networkmanager::Error > {
 
                     };
                     print!("{} ",ssid);
-                    let ascii_strength =  match Some(ap.strength()) {
-                        Some(Ok(strength)) => match strength {
-                            0..=25 => "▂___",
-                            26..=50 => "▂▄__",
-                            51..=75 => "▂▄▆_",
-                            76..=100 => "▂▄▆█",
-                            _ => "____",
-                        }
-                        Some(Err(_)) | None =>"____",
-                    };
-                    println!("{}",ascii_strength);
-                }
+                },
 
                 None => {
                     print!("Not Connected");
@@ -135,10 +161,9 @@ fn get_active_window() -> Result<(),Box<dyn StdError>>{
                     Some((before,after)) => {
 
                         println!("(box :class \"window-container\"\
-                            :space-evenly false\
                             (button :class \"window-tab\"\
                             :tooltip \"{}\"\
-                            (box \
+                            (box :space-evenly false \
                             (box :class \"win-icon\"\
                             :style \
                             \"background-image:\
@@ -220,7 +245,7 @@ fn main() -> Result<(), Box<dyn StdError>> {
                 }
             }
            
-            println!("{}Gb",MemInfo::new().unwrap());
+            println!("{}",MemInfo::new().unwrap());
         }
 
         "--window-info" => {
@@ -232,6 +257,9 @@ fn main() -> Result<(), Box<dyn StdError>> {
         }
         "--connection-status" => {
             print_conn_status();
+        }
+        "--wifi-strength" => {
+            print_wifi_strength();
         }
         "--ip" => {
             print_ipv4();
