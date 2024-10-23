@@ -79,7 +79,7 @@ fn print_wifi_strength() {
     }
 }
 
-fn print_wifi_info() -> Result<(), networkmanager::Error > {
+fn print_ssid() -> Result<(), networkmanager::Error > {
     let dbus_connection = Connection::new_system().unwrap();
     let nm = NetworkManager::new(&dbus_connection);
     let wifidev = nm.get_device_by_ip_iface(WIFI_DEV).unwrap();
@@ -166,9 +166,8 @@ fn main() -> Result<(), Box<dyn StdError>> {
         "--mem" => {
             println!("{}",MemInfo::new().unwrap());
         }
-
         "--wifi-info" => {
-            print_wifi_info();
+            print_ssid();
         }
         "--wifi-strength" => {
             print_wifi_strength();
