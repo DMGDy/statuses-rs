@@ -176,7 +176,7 @@ fn main() -> Result<(), Box<dyn StdError>> {
             print_ipv4();
         }
         _ => {
-            println!("Usage: status-rs [options]");
+            println!("Usage: {args[0]} [options]");
             process::exit(1)
         }
     }
