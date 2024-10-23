@@ -44,33 +44,6 @@ fn print_ipv4() {
 
 const WIFI_DEV: &str = "wlp170s0";
 
-fn print_conn_status() -> Result<(), Error > {
-
-    let dbus_connection = Connection::new_system()?;
-    let nm = NetworkManager::new(&dbus_connection);
-    let wifidev = nm.get_device_by_ip_iface(WIFI_DEV)?; 
-
-    let status = match wifidev {
-        Device::WiFi(x) => {
-            match Some(x.active_access_point()?) {
-                Some(ap) => {
-                    match Some(ap.ssid()) {
-                        Some(Ok(_)) => "󰀂",
-                        Some(Err(_)) | None => "󰯡",
-                    }
-                }
-                None => "󰯡",
-            }
-       }
-
-        _ => "󰯡",
-
-    };
-    println!("{}",status);
-
-    Ok(())
-} 
-
 fn print_wifi_strength() {
     let dbus_connection = Connection::new_system().unwrap();
     let nm = NetworkManager::new(&dbus_connection);
@@ -137,52 +110,6 @@ fn print_wifi_info() -> Result<(), networkmanager::Error > {
     Ok(())
 }
 
-
-fn get_active_window() -> Result<(),Box<dyn StdError>>{
-
-    let mut buffer = String::new();
-     
-    let socket2 = UnixStream::connect(
-        format!("{}/hypr/{}/.socket2.sock",
-            env::var("XDG_RUNTIME_DIR")?,
-            env::var("HYPRLAND_INSTANCE_SIGNATURE")?
-        ))?;
-                                                                            
-    let mut reader = BufReader::new(&socket2);
-    loop {
-        if reader.read_line(&mut buffer)? > 1 {
-            if buffer.contains("activewindow>>") {
-                let window_info = buffer
-                    .split(">>")
-                    .skip(1)
-                    .collect::<Vec<&str>>()
-                    .join("");
-                match window_info.split_once(",") {
-                    Some((before,after)) => {
-
-                        println!("(box :class \"window-container\"\
-                            (button :class \"window-tab\"\
-                            :tooltip \"{}\"\
-                            (box :space-evenly false \
-                            (box :class \"win-icon\"\
-                            :style \
-                            \"background-image:\
-                            url('icons/{}.svg');\")\
-                            (box :class \"win-title\"\
-                            (label :limit-width 16 :text \"{}\")\
-                            ))))",
-                            after.replace("\n",""),before,before);
-
-                    }
-                    None => ()
-                }
-            }
-            buffer.clear();
-        }
-    }
-}
-
-
 struct MemInfo {
     total: f64,
     used: f64
@@ -237,26 +164,11 @@ fn main() -> Result<(), Box<dyn StdError>> {
 
     match status {
         "--mem" => {
-            
-            if args.len() > 2 {
-                if args[2].as_str() == "-i" {
-                    print!("");
-                    process::exit(0)
-                }
-            }
-           
             println!("{}",MemInfo::new().unwrap());
-        }
-
-        "--window-info" => {
-            get_active_window()?;
         }
 
         "--wifi-info" => {
             print_wifi_info();
-        }
-        "--connection-status" => {
-            print_conn_status();
         }
         "--wifi-strength" => {
             print_wifi_strength();
